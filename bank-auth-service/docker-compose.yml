@@ -1,0 +1,30 @@
+services:
+  auth_db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    container_name: auth-db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+  app:
+    build:
+      context: .
+    image: auth-service
+    restart: unless-stopped
+    depends_on:
+      auth_db:
+        condition: service_healthy
+    env_file:
+      - .env
+    ports:
+      - "8081:8081"
+volumes:
+  auth_db_data:

@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-users
+      author: marisol
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: login
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+
+              - column:
+                  name: password_hash
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: role
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false

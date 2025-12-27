@@ -1,4 +1,3 @@
-HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -38,7 +37,11 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
 /mvnw
 /mvnw.cmd
 /.mvn/
 /.gitattributes
+/src/main/resources/application.yaml
+/src/main/resources/keystore/auth-jwt.p12
+/.env
