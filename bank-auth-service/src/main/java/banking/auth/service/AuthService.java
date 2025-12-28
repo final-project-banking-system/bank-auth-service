@@ -1,5 +1,7 @@
 package banking.auth.service;
 
+import banking.auth.dto.kafka.UserCreatedEvent;
+import banking.auth.dto.kafka.UserLoginEvent;
 import banking.auth.dto.requests.LoginRequest;
 import banking.auth.dto.requests.LogoutRequest;
 import banking.auth.dto.requests.RefreshRequest;
@@ -18,6 +20,7 @@ import banking.auth.repository.SessionRepository;
 import banking.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,6 +41,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     private final static long REFRESH_TOKEN_TTL = 7;
 
@@ -76,6 +80,14 @@ public class AuthService {
         savedUser.addSession(session);
         sessionRepository.save(session);
 
+        UserCreatedEvent event = new UserCreatedEvent(
+                savedUser.getId(),
+                savedUser.getLogin(),
+                savedUser.getEmail(),
+                savedUser.getRole().name()
+        );
+        kafkaTemplate.send("auth.users", savedUser.getId().toString(), event);
+
         log.info("Register success: userId={}, sessionId={}", savedUser.getId(), session.getId());
 
         return new RegisterResponse(savedUser.getId(), accessToken, refreshToken);
@@ -109,6 +121,14 @@ public class AuthService {
                 .build();
         user.addSession(session);
         sessionRepository.save(session);
+
+        UserLoginEvent event = new UserLoginEvent(
+                user.getId(),
+                user.getLogin(),
+                normalizeDeviceInfo(deviceInfo),
+                LocalDateTime.now()
+        );
+        kafkaTemplate.send("auth.logins", user.getId().toString(), event);
 
         log.info("Login success: userId={}, sessionId={}", user.getId(), session.getId());
 
