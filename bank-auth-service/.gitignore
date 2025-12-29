@@ -42,6 +42,3 @@ build/
 /mvnw.cmd
 /.mvn/
 /.gitattributes
-/src/main/resources/application.yaml
-/src/main/resources/keystore/auth-jwt.p12
-/.env

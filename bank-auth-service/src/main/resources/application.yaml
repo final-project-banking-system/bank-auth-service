@@ -1,0 +1,43 @@
+server:
+  port: 8081
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  liquibase:
+    enabled: true
+  kafka:
+    admin:
+      properties:
+        offsets.topic.replication.factor: 1
+        transaction.state.log.replication.factor: 1
+        transaction.state.log.min.isr: 1
+    bootstrap-servers: kafka:9092
+    topics:
+      - name: auth.users
+        partitions: 1
+        replication-factor: 1
+      - name: auth.logins
+        partitions: 1
+        replication-factor: 1
+
+app:
+  proxy:
+    routes:
+      core-banking: http://core-banking-service:8082
+      client-profile: http://client-profile-service:8083
+      notification: http://notification-service:8084
+  jwt:
+    issuer: ${JWT_ISSUER}
+    access-token-ttl-seconds: ${JWT_ACCESS_TTL:900}
+    keystore:
+      path: ${JWT_KEYSTORE_PATH:classpath:keystore/auth-jwt.p12}
+      password: ${JWT_KEYSTORE_PASSWORD}
+      alias: ${JWT_KEY_ALIAS:auth-jwt}
+      keypass: ${JWT_KEY_PASSWORD}
