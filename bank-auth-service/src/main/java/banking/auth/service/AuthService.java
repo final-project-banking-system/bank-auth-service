@@ -86,7 +86,11 @@ public class AuthService {
                 savedUser.getEmail(),
                 savedUser.getRole().name()
         );
-        kafkaTemplate.send("auth.users", savedUser.getId().toString(), event);
+        try {
+            kafkaTemplate.send("auth.users", savedUser.getId().toString(), event);
+        } catch (Exception e) {
+            log.warn("Kafka is unavailable, skipping event publish", e);
+        }
 
         log.info("Register success: userId={}, sessionId={}", savedUser.getId(), session.getId());
 
@@ -128,7 +132,11 @@ public class AuthService {
                 normalizeDeviceInfo(deviceInfo),
                 LocalDateTime.now()
         );
-        kafkaTemplate.send("auth.logins", user.getId().toString(), event);
+        try {
+            kafkaTemplate.send("auth.logins", user.getId().toString(), event);
+        } catch (Exception e) {
+            log.warn("Kafka is unavailable, skipping event publish", e);
+        }
 
         log.info("Login success: userId={}, sessionId={}", user.getId(), session.getId());
 

@@ -59,6 +59,8 @@ public class ProxyService {
             headers.add(name, request.getHeader(name));
         }
 
+        headers.remove(HttpHeaders.ACCEPT_ENCODING);
+
         byte[] body = StreamUtils.copyToByteArray(request.getInputStream());
         HttpEntity<byte[]> entity;
         if (body.length == 0) {
@@ -69,7 +71,16 @@ public class ProxyService {
 
         HttpMethod method = HttpMethod.valueOf(request.getMethod());
 
-        return restTemplate.exchange(targetUrl, method, entity, byte[].class);
+        ResponseEntity<byte[]> response = restTemplate.exchange(targetUrl, method, entity, byte[].class);
+
+        HttpHeaders out = new HttpHeaders();
+        out.putAll(response.getHeaders());
+
+        out.remove(HttpHeaders.TRANSFER_ENCODING);
+        out.remove(HttpHeaders.CONTENT_LENGTH);
+        out.remove(HttpHeaders.CONNECTION);
+
+        return new ResponseEntity<>(response.getBody(), out, response.getStatusCode());
     }
 
     private String trim(String url) {
