@@ -28,7 +28,6 @@ public class JwtTokenService {
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(accessTokenTtl))
                 .subject(user.getId().toString())
-                .claim("email", user.getEmail())
                 .claim("login", user.getLogin())
                 .claim("role", user.getRole().name())
                 .build();
