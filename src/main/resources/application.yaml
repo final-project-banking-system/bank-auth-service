@@ -26,6 +26,9 @@ spring:
       - name: auth.logins
         partitions: 1
         replication-factor: 1
+      - name: system.errors
+        partitions: 1
+        replication-factor: 1
 
 app:
   proxy:

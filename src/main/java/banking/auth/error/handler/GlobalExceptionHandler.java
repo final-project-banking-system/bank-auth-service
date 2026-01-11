@@ -4,6 +4,8 @@ import banking.auth.error.exception.ConflictException;
 import banking.auth.error.exception.ForbiddenException;
 import banking.auth.error.exception.NotFoundException;
 import banking.auth.error.exception.UnauthorizedException;
+import banking.auth.service.SystemErrorPublisher;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -15,7 +17,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+    private final SystemErrorPublisher systemErrorPublisher;
+
     private Map<String, Object> buildBody(HttpStatus status, String message) {
         return Map.of("timestamp", LocalDateTime.now().toString(), "status", status.value(),
                 "error", status.getReasonPhrase(), "message", message);
@@ -55,7 +60,13 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleAny() {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(buildBody(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error"));
+    public ResponseEntity<Map<String, Object>> handleAny(Exception e) {
+        systemErrorPublisher.publish(
+                "bank-auth-service",
+                "UNHANDLED",
+                "Unhandled exception",
+                e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(buildBody(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Internal server error"));
     }
 }

@@ -18,6 +18,7 @@ import banking.auth.model.entity.Session;
 import banking.auth.model.entity.User;
 import banking.auth.repository.SessionRepository;
 import banking.auth.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -30,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -41,7 +43,8 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     private final static long REFRESH_TOKEN_TTL = 7;
 
@@ -86,11 +89,8 @@ public class AuthService {
                 savedUser.getEmail(),
                 savedUser.getRole().name()
         );
-        try {
-            kafkaTemplate.send("auth.users", savedUser.getId().toString(), event);
-        } catch (Exception e) {
-            log.warn("Kafka is unavailable, skipping event publish", e);
-        }
+
+        trySendEvent("auth.users", savedUser.getId().toString(), event);
 
         log.info("Register success: userId={}, sessionId={}", savedUser.getId(), session.getId());
 
@@ -132,11 +132,8 @@ public class AuthService {
                 normalizeDeviceInfo(deviceInfo),
                 LocalDateTime.now()
         );
-        try {
-            kafkaTemplate.send("auth.logins", user.getId().toString(), event);
-        } catch (Exception e) {
-            log.warn("Kafka is unavailable, skipping event publish", e);
-        }
+
+        trySendEvent("auth.logins", user.getId().toString(), event);
 
         log.info("Login success: userId={}, sessionId={}", user.getId(), session.getId());
 
@@ -227,5 +224,22 @@ public class AuthService {
         rawData = rawData.trim();
         int max = 512;
         return rawData.length() <= max ? rawData : rawData.substring(0, max);
+    }
+
+    private void trySendEvent(String topic, String key, Object event) {
+        try {
+            String json = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send(topic, key, json)
+                    .orTimeout(30, TimeUnit.SECONDS)
+                    .whenComplete((res, error) -> {
+                        if (error != null) {
+                            log.warn("Kafka publish failed: topic={}, key={}", topic, key, error);
+                        } else {
+                            log.info("Kafka published: topic={}, key={}", topic, key);
+                        }
+                    });
+        } catch (Exception e) {
+            log.warn("Kafka is unavailable or serialization failed. topic={}, key={}", topic, key, e);
+        }
     }
 }
