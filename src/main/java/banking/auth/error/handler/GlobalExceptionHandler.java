@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,19 +31,6 @@ public class GlobalExceptionHandler {
     private Map<String, Object> buildBody(HttpStatus status, String message, List<String> errors) {
         return Map.of("timestamp", LocalDateTime.now().toString(), "status", status.value(),
                 "error", status.getReasonPhrase(), "message", message, "errors", errors);
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException exception) {
-        Map<String, Object> errorBody = new LinkedHashMap<>();
-        errorBody.put("timestamp", LocalDateTime.now().toString());
-        errorBody.put("status", 400);
-        errorBody.put("error", "Bad Request");
-        errorBody.put("message", "Validation failed");
-        errorBody.put("errors", exception.getBindingResult().getFieldErrors().stream()
-                .map(fieldError -> Map.of("field", fieldError.getField(), "message", fieldError.getDefaultMessage()))
-                .toList());
-        return ResponseEntity.badRequest().body(errorBody);
     }
 
     @ExceptionHandler(ConflictException.class)
