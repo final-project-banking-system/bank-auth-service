@@ -18,10 +18,10 @@ import banking.auth.model.entity.Session;
 import banking.auth.model.entity.User;
 import banking.auth.repository.SessionRepository;
 import banking.auth.repository.UserRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import banking.auth.service.publisher.AuthOutboxPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,22 +31,26 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+    private final static long REFRESH_TOKEN_TTL = 7;
+
+    @Value("${banking.kafka.topics.users}")
+    private String topicUsers;
+
+    @Value("${banking.kafka.topics.logins}")
+    private String topicLogins;
+
     private final UserRepository userRepository;
     private final SessionRepository sessionRepository;
     private final JwtTokenService jwtTokenService;
     private final RefreshTokenService refreshTokenService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final ObjectMapper objectMapper;
-
-    private final static long REFRESH_TOKEN_TTL = 7;
+    private final AuthOutboxPublisher authOutboxPublisher;
 
     @Transactional
     public RegisterResponse register(RegisterRequest request, String deviceInfo) {
@@ -90,7 +94,7 @@ public class AuthService {
                 savedUser.getRole().name()
         );
 
-        trySendEvent("auth.users", savedUser.getId().toString(), event);
+        authOutboxPublisher.save("USER", savedUser.getId(), topicUsers, event, "REGISTER_USER");
 
         log.info("Register success: userId={}, sessionId={}", savedUser.getId(), session.getId());
 
@@ -133,7 +137,7 @@ public class AuthService {
                 LocalDateTime.now()
         );
 
-        trySendEvent("auth.logins", user.getId().toString(), event);
+        authOutboxPublisher.save("USER", user.getId(), topicLogins, event, "LOGIN_USER");
 
         log.info("Login success: userId={}, sessionId={}", user.getId(), session.getId());
 
@@ -182,8 +186,8 @@ public class AuthService {
     public List<SessionResponse> listOfSessions(UUID userId) {
         log.info("List sessions: userId={}", userId);
 
-        var result = sessionRepository.findAllByUser_Id(userId).stream()
-                .filter(session -> session.getExpiresAt().isAfter(LocalDateTime.now()))
+        var now = LocalDateTime.now();
+        var result = sessionRepository.findAllByUser_IdAndExpiresAtAfterOrderByCreatedAtDesc(userId, now).stream()
                 .map(session -> {
                     SessionResponse sessionResponse = new SessionResponse();
                     sessionResponse.setSessionId(session.getId());
@@ -224,22 +228,5 @@ public class AuthService {
         rawData = rawData.trim();
         int max = 512;
         return rawData.length() <= max ? rawData : rawData.substring(0, max);
-    }
-
-    private void trySendEvent(String topic, String key, Object event) {
-        try {
-            String json = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send(topic, key, json)
-                    .orTimeout(30, TimeUnit.SECONDS)
-                    .whenComplete((res, error) -> {
-                        if (error != null) {
-                            log.warn("Kafka publish failed: topic={}, key={}", topic, key, error);
-                        } else {
-                            log.info("Kafka published: topic={}, key={}", topic, key);
-                        }
-                    });
-        } catch (Exception e) {
-            log.warn("Kafka is unavailable or serialization failed. topic={}, key={}", topic, key, e);
-        }
     }
 }

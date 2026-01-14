@@ -44,3 +44,10 @@ app:
       password: ${JWT_KEYSTORE_PASSWORD}
       alias: ${JWT_KEY_ALIAS:auth-jwt}
       keypass: ${JWT_KEY_PASSWORD}
+
+banking:
+  kafka:
+    topics:
+      users: auth.users
+      logins: auth.logins
+      systemErrors: system.errors

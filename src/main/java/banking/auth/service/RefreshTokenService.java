@@ -25,8 +25,4 @@ public class RefreshTokenService {
             throw new IllegalStateException("Cannot hash refresh token", e);
         }
     }
-
-    public boolean isMatch(String rawTokenFromClient, String tokenInDb) {
-        return toHash(rawTokenFromClient).equals(tokenInDb);
-    }
 }

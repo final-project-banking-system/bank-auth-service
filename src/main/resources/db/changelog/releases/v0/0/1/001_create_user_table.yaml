@@ -15,7 +15,7 @@ databaseChangeLog:
 
               - column:
                   name: login
-                  type: varchar(50)
+                  type: varchar(32)
                   constraints:
                     nullable: false
                     unique: true

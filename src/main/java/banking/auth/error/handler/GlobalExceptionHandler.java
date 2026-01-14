@@ -4,16 +4,19 @@ import banking.auth.error.exception.ConflictException;
 import banking.auth.error.exception.ForbiddenException;
 import banking.auth.error.exception.NotFoundException;
 import banking.auth.error.exception.UnauthorizedException;
-import banking.auth.service.SystemErrorPublisher;
+import banking.auth.service.publisher.SystemErrorPublisher;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -24,6 +27,11 @@ public class GlobalExceptionHandler {
     private Map<String, Object> buildBody(HttpStatus status, String message) {
         return Map.of("timestamp", LocalDateTime.now().toString(), "status", status.value(),
                 "error", status.getReasonPhrase(), "message", message);
+    }
+
+    private Map<String, Object> buildBody(HttpStatus status, String message, List<String> errors) {
+        return Map.of("timestamp", LocalDateTime.now().toString(), "status", status.value(),
+                "error", status.getReasonPhrase(), "message", message, "errors", errors);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -57,6 +65,31 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(NotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(buildBody(HttpStatus.NOT_FOUND, e.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleBodyValidation(MethodArgumentNotValidException e) {
+        List<String> errors = e.getBindingResult().getFieldErrors().stream()
+                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .toList();
+
+        return ResponseEntity.badRequest().body(buildBody(HttpStatus.BAD_REQUEST,
+                "Request validation failed", errors));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleParamValidation(ConstraintViolationException e) {
+        List<String> errors = e.getConstraintViolations().stream()
+                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                .toList();
+
+        return ResponseEntity.badRequest().body(buildBody(HttpStatus.BAD_REQUEST,
+                "Request validation failed", errors));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleNotReadable(HttpMessageNotReadableException e) {
+        return ResponseEntity.badRequest().body(buildBody(HttpStatus.BAD_REQUEST, e.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

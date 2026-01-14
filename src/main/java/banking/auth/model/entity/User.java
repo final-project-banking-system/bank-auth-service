@@ -30,10 +30,10 @@ public class User {
         }
     }
 
-    @Column(name = "login", nullable = false, unique = true, length = 50)
+    @Column(name = "login", nullable = false, unique = true, length = 32)
     private String login;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
