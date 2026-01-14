@@ -41,7 +41,7 @@ public class User {
     @Builder.Default
     private UserRole role = UserRole.USER;
 
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
     @CreationTimestamp
