@@ -28,7 +28,6 @@ public class SystemErrorPublisher {
         var errorId = UUID.randomUUID();
 
         Map<String, Object> payload = Map.of(
-                "eventType", "SYSTEM_ERROR",
                 "errorId", errorId,
                 "service", service,
                 "operation", operation,
@@ -38,7 +37,7 @@ public class SystemErrorPublisher {
                 "occurredAt", LocalDateTime.now().toString()
         );
 
-        JsonNode json = outboxJsonUtil.toJsonNode(payload, "SYSTEM_ERROR event, errorId=" + errorId);
+        JsonNode json = outboxJsonUtil.toJsonNode(payload, "SYSTEM_ERROR");
 
         outboxEventRepository.save(OutboxEvent.builder()
                 .aggregateType("ERROR")

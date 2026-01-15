@@ -115,7 +115,7 @@ public class AuthServiceTest {
         assertThat(savedSession.getExpiresAt()).isAfter(LocalDateTime.now());
 
         verify(authOutboxPublisher).save(eq("USER"), eq(response.getUserId()), eq("auth.users"), any(),
-                eq("REGISTER_USER"));
+                eq("USER_CREATED"));
     }
 
     @Test
@@ -184,7 +184,7 @@ public class AuthServiceTest {
         assertThat(saved.getExpiresAt()).isAfter(LocalDateTime.now());
 
         verify(authOutboxPublisher).save(eq("USER"), eq(userId), eq("auth.logins"), any(),
-                eq("LOGIN_USER"));
+                eq("USER_LOGIN"));
     }
 
     @Test

@@ -57,9 +57,9 @@ JWT_KEY_PASSWORD=TO_CHANGE
 
 ## Используемые Kafka топики
 
-- `auth.users` — события регистрации пользователей (REGISTER_USER)
-- `auth.logins` — события логина пользователей (LOGIN_USER)
-- `system.errors` — системные ошибки сервиса
+- `auth.users` — события регистрации пользователей (USER_CREATED)
+- `auth.logins` — события логина пользователей (USER_LOGIN)
+- `system.errors` — системные ошибки сервиса (SYSTEM_ERROR)
 
 ---
 

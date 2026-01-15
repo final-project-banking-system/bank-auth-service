@@ -94,7 +94,7 @@ public class AuthService {
                 savedUser.getRole().name()
         );
 
-        authOutboxPublisher.save("USER", savedUser.getId(), topicUsers, event, "REGISTER_USER");
+        authOutboxPublisher.save("USER", savedUser.getId(), topicUsers, event, "USER_CREATED");
 
         log.info("Register success: userId={}, sessionId={}", savedUser.getId(), session.getId());
 
@@ -137,7 +137,7 @@ public class AuthService {
                 LocalDateTime.now()
         );
 
-        authOutboxPublisher.save("USER", user.getId(), topicLogins, event, "LOGIN_USER");
+        authOutboxPublisher.save("USER", user.getId(), topicLogins, event, "USER_LOGIN");
 
         log.info("Login success: userId={}, sessionId={}", user.getId(), session.getId());
 
