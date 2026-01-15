@@ -31,11 +31,6 @@ spring:
         replication-factor: 1
 
 app:
-  proxy:
-    routes:
-      core-banking: http://core-banking-service:8082
-      client-profile: http://client-profile-service:8083
-      notification: http://notification-service:8084
   jwt:
     issuer: ${JWT_ISSUER}
     access-token-ttl-seconds: ${JWT_ACCESS_TTL:900}
