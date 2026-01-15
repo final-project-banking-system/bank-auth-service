@@ -26,7 +26,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/auth/register", "/auth/login", "/auth/refresh",
                                         "/auth/.well-known/jwks.json", "/v3/api-docs/**", "/swagger-ui/**",
-                                        "/swagger-ui.html", "/auth/logout", "/proxy/**").permitAll()
+                                        "/swagger-ui.html", "/auth/logout").permitAll()
                                 .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
         return http.build();

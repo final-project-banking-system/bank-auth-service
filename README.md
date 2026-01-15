@@ -13,7 +13,6 @@ Auth Service — это сервис аутентификации и автор�
 - Выпуск JWT access token
 - Обновление access token с использованием refresh token
 - Управление пользовательскими сессиями
-- Proxy-доступ к другим сервисам
 - Публикация событий в Kafka (USER_CREATED, USER_LOGIN, SYSTEM_ERROR)
 - JWKS endpoint для валидации JWT другими сервисами
 
@@ -58,8 +57,8 @@ JWT_KEY_PASSWORD=TO_CHANGE
 
 ## Используемые Kafka топики
 
-- `auth.users` — события регистрации пользователей (USER_CREATED)
-- `auth.logins` — события логина пользователей (USER_LOGIN)
+- `auth.users` — события регистрации пользователей (REGISTER_USER)
+- `auth.logins` — события логина пользователей (LOGIN_USER)
 - `system.errors` — системные ошибки сервиса
 
 ---
@@ -152,13 +151,6 @@ Authorization: Bearer <access_token>
 
 Используется другими сервисами для получения публичного ключа  
 и проверки JWT access token.
-
-### Proxy-доступ к другим сервисам
-
-**ANY** `/proxy/{serviceKey}/**`
-
-Используется для проксирования запросов к другим сервисам системы  
-(Core Banking Service, Client Profile Service, Notification Service).
 
 ## Примечания
 
