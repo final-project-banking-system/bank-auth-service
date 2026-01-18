@@ -12,7 +12,7 @@ import java.util.Map;
 public class JwksController {
     private final JWKSet jwkSet;
 
-    @GetMapping("/auth/.well-known/jwks.json")
+    @GetMapping("${app.jwks.path}")
     public Map<String, Object> jwks() {
         return jwkSet.toPublicJWKSet().toJSONObject();
     }

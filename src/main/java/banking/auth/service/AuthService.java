@@ -61,9 +61,11 @@ public class AuthService {
         log.info("Register attempt: login={}, email={}", login, email);
 
         if (userRepository.existsByLogin(login)) {
+            log.error("Register failed: login already exists. login={}", login);
             throw new ConflictException("This login already belongs to other user: " + login);
         }
         if (userRepository.existsByEmail(email)) {
+            log.error("Register failed: email already exists. email={}", email);
             throw new ConflictException("This email already belongs to other user: " + email);
         }
 
@@ -109,12 +111,12 @@ public class AuthService {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(login, request.getPassword()));
         } catch (Exception e) {
-            log.warn("Login failed: invalid credentials. login={}", login);
+            log.error("Login failed: invalid credentials. login={}", login);
             throw new UnauthorizedException("Invalid login or password");
         }
 
         User user = userRepository.findByLogin(request.getLogin()).orElseThrow(() -> {
-            log.warn("Login failed: user not found after auth. login={}", login);
+            log.error("Login failed: user not found after authentication. login={}", login);
             return new UnauthorizedException("Invalid login");
         });
 
@@ -151,12 +153,13 @@ public class AuthService {
         log.info("Refresh attempt");
 
         Session session = sessionRepository.findByRefreshTokenHash(requestRefreshTokenHash).orElseThrow(() -> {
-            log.warn("Refresh failed: token not found");
+            log.error("Refresh failed: token not found");
             return new UnauthorizedException("Invalid refresh token");
         });
 
         if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
-            log.warn("Refresh failed: token expired. userId={}, sessionId={}", session.getUser().getId(), session.getId());
+            log.error("Refresh failed: token expired. userId={}, sessionId={}", session.getUser().getId(),
+                    session.getId());
             sessionRepository.delete(session);
             throw new UnauthorizedException("Refresh token expired");
         }
@@ -174,7 +177,7 @@ public class AuthService {
         log.info("Logout attempt");
 
         Session session = sessionRepository.findByRefreshTokenHash(requestRefreshTokenHash).orElseThrow(() -> {
-            log.warn("Logout failed: refresh token not found");
+            log.error("Logout failed: refresh token not found");
             return new UnauthorizedException("Invalid refresh token");
         });
 
@@ -208,12 +211,12 @@ public class AuthService {
         log.info("Revoke session attempt: requesterUserId={}, sessionId={}", userId, sessionId);
 
         Session session = sessionRepository.findById(sessionId).orElseThrow(() -> {
-            log.warn("Revoke session failed: not found. sessionId={}", sessionId);
+            log.error("Revoke session failed: not found. sessionId={}", sessionId);
             return new NotFoundException("Session not found");
         });
 
         if (!session.getUser().getId().equals(userId)) {
-            log.warn("Revoke session forbidden: requesterUserId={}, ownerUserId={}, sessionId={}",
+            log.error("Revoke session forbidden: requesterUserId={}, ownerUserId={}, sessionId={}",
                     userId, session.getUser().getId(), sessionId);
             throw new ForbiddenException("Session belongs to another user");
         }
