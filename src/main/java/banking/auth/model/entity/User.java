@@ -3,13 +3,10 @@ package banking.auth.model.entity;
 import banking.auth.model.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -18,18 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
-    @Id
-    @Column(name = "id", updatable = false, nullable = false)
-    private UUID id;
-
-    @PrePersist
-    private void generateId() {
-        if (id == null) {
-            id = UUID.randomUUID();
-        }
-    }
-
+public class User extends BaseEntity {
     @Column(name = "login", nullable = false, unique = true, length = 32)
     private String login;
 
@@ -43,10 +29,6 @@ public class User {
 
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -72,18 +54,5 @@ public class User {
         if (session == null) return;
         sessions.remove(session);
         session.setUser(null);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof User)) return false;
-        User that = (User) obj;
-        return id != null && id.equals(that.id);
     }
 }
